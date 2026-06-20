@@ -1,8 +1,10 @@
 # GergVault
 
-**Open-source trading card intake, review, AI extraction, and pricing intelligence, with a hosted multi-tenant version planned on the same foundation.**
+**Open-source trading card intake, review, AI extraction, and pricing intelligence for sports cards, TCG cards, and collectible card workflows, with a hosted multi-tenant version planned on the same foundation.**
 
 GergVault turns messy front/back group photos of trading cards into structured, reviewable card records. The first workflow is built for the real collector problem: lay out 10 cards, take one photo of the fronts and one photo of the backs, upload both, then review draft metadata before anything becomes part of the collection.
+
+Collectors can use the same workflow for baseball cards, basketball cards, football cards, hockey cards, soccer cards, Pokemon cards, Magic: The Gathering cards, Yu-Gi-Oh cards, One Piece cards, Lorcana cards, and other trading card game or sports card collections.
 
 AI can help read the cards. Pricing providers can help estimate value. But GergVault is deliberately **human-review first**: no AI extraction, crop, or value estimate is treated as final until a person approves it.
 
@@ -68,6 +70,35 @@ The hosted service should not fork away from the open-source product. Features s
 - **Provider hooks:** eBay, PriceCharting/SportsCardsPro, PSA, manual comps
 - **Management commands:** CLI paths for extraction, recropping, valuation, provider status
 - **Privacy posture:** only permissioned demo images; no API keys, private uploads, or production data in the repo
+
+## Collector Search Keywords
+
+GergVault is built for collectors searching for tools around:
+
+- trading card scanner
+- sports card scanner
+- baseball card scanner
+- basketball card scanner
+- football card scanner
+- hockey card scanner
+- soccer card scanner
+- Pokemon card scanner
+- TCG card scanner
+- card collection manager
+- sports card collection software
+- trading card inventory
+- baseball card inventory
+- Pokemon card inventory
+- card cataloging app
+- card grading workflow
+- card pricing tool
+- card value estimator
+- eBay card comps
+- PSA card workflow
+- AI card scanner
+- OpenAI Vision card extraction
+
+Supported collection categories include sports cards, baseball cards, basketball cards, football cards, hockey cards, soccer cards, WNBA cards, NBA cards, NFL cards, MLB cards, NHL cards, Pokemon cards, Magic cards, Yu-Gi-Oh cards, One Piece cards, Lorcana cards, and other collectible cards.
 
 ## Tech Stack
 
