@@ -1,6 +1,6 @@
 # GergVault
 
-**Open-source trading card intake, review, AI extraction, and pricing intelligence.**
+**Open-source trading card intake, review, AI extraction, and pricing intelligence, with a hosted multi-tenant version planned on the same foundation.**
 
 GergVault turns messy front/back group photos of trading cards into structured, reviewable card records. The first workflow is built for the real collector problem: lay out 10 cards, take one photo of the fronts and one photo of the backs, upload both, then review draft metadata before anything becomes part of the collection.
 
@@ -28,6 +28,8 @@ GergVault is built around that flow:
 
 GergVault is an early open-source extraction from a working Django module. It is useful as a local/developer baseline today, with the most polished surface around 10-card batch intake and review.
 
+The hosted service at `gergvault.halobridge.ai` is intended to run the same core product while adding multi-tenant account isolation, managed provider configuration, backups, collaboration, support, and future paid features. The public repo remains the self-hostable core.
+
 Stable enough to explore:
 
 - Django models, migrations, admin, API, and web views
@@ -43,7 +45,17 @@ Still evolving:
 - production packaging
 - stronger provider integrations
 - cleaner standalone UI polish
+- hosted multi-tenant account model
 - hosted demo and demo video
+
+## Open Source vs Hosted
+
+GergVault is an open-core style project:
+
+- **Open-source repo:** self-hostable card intake, review UI, card detail pages, API endpoints, management commands, provider hooks, and tests.
+- **Hosted version:** the same core workflow plus managed multi-tenant accounts, provider setup, secure media/storage operations, backups, collaboration, support, usage limits, and future paid tiers.
+
+The hosted service should not fork away from the open-source product. Features should start in the shared core when they are generally useful, then hosted-only features can wrap that core where tenancy, billing, managed providers, or operational guarantees are required.
 
 ## Features
 

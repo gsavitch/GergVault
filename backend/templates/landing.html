@@ -55,11 +55,14 @@
     .step-num { flex: 0 0 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--vault); color: #fff; font-weight: 900; }
     .support { margin-top: 18px; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: 14px; align-items: stretch; }
     .support .panel:first-child { background: var(--cream); border-color: #ead8a9; }
+    .hosted { margin-top: 18px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+    .pill { display: inline-flex; align-items: center; min-height: 28px; padding: 5px 9px; border-radius: 999px; background: #edf3ef; color: #31413d; font-size: 12px; font-weight: 850; margin-bottom: 10px; }
+    .feature-list { margin: 12px 0 0; padding-left: 18px; color: var(--muted); line-height: 1.5; }
     .small { font-size: 13px; color: var(--muted); margin-top: 10px; }
     .link-list { display: grid; gap: 8px; }
     .link-list a { color: var(--green); font-weight: 850; text-decoration: none; }
     @media (max-width: 900px) {
-      .hero, .support { grid-template-columns: 1fr; }
+      .hero, .support, .hosted { grid-template-columns: 1fr; }
       .grid, .trust-row { grid-template-columns: 1fr; }
       .section-head { align-items: start; flex-direction: column; }
     }
@@ -158,10 +161,33 @@
       </div>
     </section>
 
+    <section class="hosted" aria-label="Open-source and hosted plans">
+      <article class="panel">
+        <span class="pill">Open source</span>
+        <h2>Self-hostable core</h2>
+        <p>The public repo stays useful on its own: batch intake, review, card details, provider hooks, and local collection workflows. You can run it yourself and wire your own keys.</p>
+        <ul class="feature-list">
+          <li>Django app and API</li>
+          <li>Draft-first card review</li>
+          <li>Provider-ready AI and pricing architecture</li>
+        </ul>
+      </article>
+      <article class="panel">
+        <span class="pill">Hosted service</span>
+        <h2>Managed multi-tenant vault</h2>
+        <p>The hosted version uses the same foundation, then adds account isolation, managed provider setup, collaboration, backups, support, and premium collection features over time.</p>
+        <ul class="feature-list">
+          <li>Multi-tenant hosted accounts</li>
+          <li>Managed AI/pricing providers</li>
+          <li>Future paid tiers for power collectors and teams</li>
+        </ul>
+      </article>
+    </section>
+
     <section class="support">
       <article class="panel">
-        <h2>Free hosted beta, open-source core</h2>
-        <p><strong>GergVault is free while the hosted version is early.</strong> Donations will help cover hosting, AI experiments, pricing provider work, and better demo data. The repo stays public so collectors can self-host or build adapters.</p>
+        <h2>Free hosted beta, paid tiers later</h2>
+        <p><strong>GergVault is free while the hosted version is early.</strong> Donations help cover hosting, AI experiments, pricing provider work, and better demo data. As the hosted version matures, paid plans can support larger collections, managed provider credits, collaboration, exports, and automation.</p>
         <p class="small">For now, the best support is starring the repo and sharing it with collectors who have too many cards and too little time.</p>
       </article>
       <article class="panel">
