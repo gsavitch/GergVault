@@ -977,7 +977,7 @@ def _response_text(raw_response: dict[str, Any]) -> str:
 
 
 def _prompt() -> str:
-    return """You are extracting trading-card metadata for Open Card Vault.
+    return """You are extracting trading-card metadata for Gerg Card Vault.
 
 You will receive two group photos:
 1. Fronts of the same 10 cards.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Django's command-line utility for Open Card Vault."""
+"""Django's command-line utility for Gerg Card Vault."""
 import os
 import sys
 

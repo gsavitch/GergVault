@@ -1,4 +1,4 @@
-# Generated for the Open Card Vault scaffold.
+# Generated for the Gerg Card Vault scaffold.
 
 import uuid
 

@@ -6,7 +6,7 @@ from card_vault.models import CardVaultCard, CardVaultImage, CardVaultIntakeSess
 from card_vault.serializers import draft_json_for_slot
 
 
-@override_settings(MEDIA_ROOT="/tmp/open-card-vault-review-test-media")
+@override_settings(MEDIA_ROOT="/tmp/gerg-card-vault-review-test-media")
 class CardVaultReviewMvpTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(

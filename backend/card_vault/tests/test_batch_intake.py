@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from card_vault.models import CardVaultCard, CardVaultImage, CardVaultIntakeSession
 
 
-@override_settings(MEDIA_ROOT="/tmp/open-card-vault-test-media")
+@override_settings(MEDIA_ROOT="/tmp/gerg-card-vault-test-media")
 class BatchCardIntakeTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(

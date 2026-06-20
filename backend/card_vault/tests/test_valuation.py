@@ -125,7 +125,7 @@ def weak_pricing_payload():
     }
 
 
-@override_settings(MEDIA_ROOT="/tmp/open-card-vault-valuation-test-media")
+@override_settings(MEDIA_ROOT="/tmp/gerg-card-vault-valuation-test-media")
 class CardVaultValuationTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
