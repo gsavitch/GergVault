@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
+from django.urls import resolve
 
 from card_vault.models import GergVaultTrafficEvent
 
@@ -47,3 +48,18 @@ class GergVaultTrafficTrackingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(GergVaultTrafficEvent.objects.exists())
+
+    def test_privacy_page_loads_and_mentions_first_party_tracking(self):
+        response = self.client.get("/privacy/")
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("GergVault Privacy", content)
+        self.assertIn("first-party operational analytics", content)
+        self.assertIn("does not store request bodies", content)
+
+    @override_settings(DEBUG=False, GERGVAULT_SERVE_MEDIA=True)
+    def test_media_route_is_available_when_explicitly_enabled(self):
+        match = resolve("/media/card_vault/demo.jpg")
+
+        self.assertEqual(match.func.__name__, "serve")

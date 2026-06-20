@@ -22,6 +22,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -84,6 +85,14 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", str(BASE_DIR / "media")))
 
@@ -91,6 +100,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/card-vault/"
 LOGOUT_REDIRECT_URL = "/"
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = os.environ.get("USE_X_FORWARDED_HOST", "1").lower() in {"1", "true", "yes", "on"}
+SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "0").lower() in {"1", "true", "yes", "on"}
+SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "0").lower() in {"1", "true", "yes", "on"}
+CSRF_COOKIE_SECURE = os.environ.get("CSRF_COOKIE_SECURE", "0").lower() in {"1", "true", "yes", "on"}
+SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0") or "0")
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", "0").lower() in {"1", "true", "yes", "on"}
+SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD", "0").lower() in {"1", "true", "yes", "on"}
+SECURE_REFERRER_POLICY = os.environ.get("SECURE_REFERRER_POLICY", "same-origin")
+GERGVAULT_SERVE_MEDIA = os.environ.get("GERGVAULT_SERVE_MEDIA", "1").lower() in {"1", "true", "yes", "on"}
 GERGVAULT_TRACK_TRAFFIC = os.environ.get("GERGVAULT_TRACK_TRAFFIC", "1").lower() in {"1", "true", "yes", "on"}
 GERGVAULT_TRAFFIC_EXCLUDED_PREFIXES = tuple(
     prefix.strip()
