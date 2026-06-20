@@ -6,6 +6,10 @@ GergVault turns messy front/back group photos of trading cards into structured, 
 
 AI can help read the cards. Pricing providers can help estimate value. But GergVault is deliberately **human-review first**: no AI extraction, crop, or value estimate is treated as final until a person approves it.
 
+![GergVault real 10-card batch intake example](docs/assets/batch-front-back-demo.jpg)
+
+The image above is a real front/back 10-card intake example used with permission. GergVault is designed for this kind of imperfect tabletop capture, not only pristine single-card scans.
+
 ## Why It Exists
 
 Most card cataloging tools assume you already have clean single-card scans and typed metadata. Real intake is rougher than that. You open a pack, sort a stack, snap photos, and want the system to do the boring work without lying to you.
@@ -36,11 +40,10 @@ Stable enough to explore:
 
 Still evolving:
 
-- browser-ready demo dataset
 - production packaging
 - stronger provider integrations
 - cleaner standalone UI polish
-- screenshots and hosted demo
+- hosted demo and demo video
 
 ## Features
 
@@ -52,7 +55,7 @@ Still evolving:
 - **Pricing intelligence:** optional Brave Search fallback and provider-ready valuation runs
 - **Provider hooks:** eBay, PriceCharting/SportsCardsPro, PSA, manual comps
 - **Management commands:** CLI paths for extraction, recropping, valuation, provider status
-- **Privacy posture:** no real collection media, API keys, or production data in the repo
+- **Privacy posture:** only permissioned demo images; no API keys, private uploads, or production data in the repo
 
 ## Tech Stack
 
@@ -220,7 +223,7 @@ Start with:
 
 ## Data and Privacy
 
-Do not commit real card scans, production media, user uploads, API keys, or valuation results tied to a private collection. Use synthetic examples under `examples/` for demos and tests.
+Do not commit production media, user uploads, API keys, or valuation results tied to a private collection. The example photos in `docs/assets/` are included with explicit permission as public demo material. Use synthetic examples under `examples/` for tests and non-permissioned demos.
 
 ## License
 
