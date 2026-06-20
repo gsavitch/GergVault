@@ -11,11 +11,33 @@ from card_vault import views as card_vault_views
 urlpatterns = [
     path("", TemplateView.as_view(template_name="landing.html"), name="root"),
     path("privacy/", TemplateView.as_view(template_name="privacy.html"), name="privacy"),
+    path("terms/", TemplateView.as_view(template_name="terms.html"), name="terms"),
     path("accounts/signup/", card_vault_views.signup, name="signup"),
+    path("accounts/verify-email/<uuid:token>/", card_vault_views.verify_email, name="verify-email"),
     path(
         "accounts/login/",
         auth_views.LoginView.as_view(template_name="registration/login.html"),
         name="login",
+    ),
+    path(
+        "accounts/password-reset/",
+        auth_views.PasswordResetView.as_view(template_name="registration/password_reset.html"),
+        name="password_reset",
+    ),
+    path(
+        "accounts/password-reset/done/",
+        auth_views.PasswordResetDoneView.as_view(template_name="registration/password_reset_done.html"),
+        name="password_reset_done",
+    ),
+    path(
+        "accounts/reset/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(template_name="registration/password_reset_confirm.html"),
+        name="password_reset_confirm",
+    ),
+    path(
+        "accounts/reset/done/",
+        auth_views.PasswordResetCompleteView.as_view(template_name="registration/password_reset_complete.html"),
+        name="password_reset_complete",
     ),
     path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("admin/", admin.site.urls),

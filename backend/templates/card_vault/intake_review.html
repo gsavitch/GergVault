@@ -161,7 +161,7 @@
           <article class="panel group-image">
             <h2>Front Group Image</h2>
             {% if front_group_image %}
-              <img src="{{ front_group_image.image.url }}" alt="Front group image">
+              <img src="{{ front_group_image.protected_url }}" alt="Front group image">
             {% else %}
               <div class="missing">No front group image stored.</div>
             {% endif %}
@@ -169,7 +169,7 @@
           <article class="panel group-image">
             <h2>Back Group Image</h2>
             {% if back_group_image %}
-              <img src="{{ back_group_image.image.url }}" alt="Back group image">
+              <img src="{{ back_group_image.protected_url }}" alt="Back group image">
             {% else %}
               <div class="missing">No back group image stored.</div>
             {% endif %}
@@ -183,8 +183,8 @@
                 <div class="card-media" aria-label="Slot {{ card.slot_index }} card images">
                   <div class="crop-pane">
                     {% if card.front_image_crop %}
-                      <a href="{{ card.front_image_crop.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open slot {{ card.slot_index }} front crop in a separate window">
-                        <img src="{{ card.front_image_crop.image.url }}" alt="Slot {{ card.slot_index }} front crop">
+                      <a href="{{ card.front_image_crop.protected_url }}" target="_blank" rel="noopener noreferrer" aria-label="Open slot {{ card.slot_index }} front crop in a separate window">
+                        <img src="{{ card.front_image_crop.protected_url }}" alt="Slot {{ card.slot_index }} front crop">
                       </a>
                     {% else %}
                       <div class="crop-placeholder">Front crop<br>pending</div>
@@ -193,8 +193,8 @@
                   </div>
                   <div class="crop-pane">
                     {% if card.back_image_crop %}
-                      <a href="{{ card.back_image_crop.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open slot {{ card.slot_index }} back crop in a separate window">
-                        <img src="{{ card.back_image_crop.image.url }}" alt="Slot {{ card.slot_index }} back crop">
+                      <a href="{{ card.back_image_crop.protected_url }}" target="_blank" rel="noopener noreferrer" aria-label="Open slot {{ card.slot_index }} back crop in a separate window">
+                        <img src="{{ card.back_image_crop.protected_url }}" alt="Slot {{ card.slot_index }} back crop">
                       </a>
                     {% else %}
                       <div class="crop-placeholder">Back crop<br>pending</div>

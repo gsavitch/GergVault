@@ -6,7 +6,10 @@ from card_vault.models import (
     CardVaultIntakeSession,
     CardVaultLocation,
     CardVaultValuation,
+    GergVaultTenant,
+    GergVaultTenantMembership,
     GergVaultTrafficEvent,
+    GergVaultUserProfile,
 )
 
 
@@ -85,6 +88,30 @@ class CardVaultValuationAdmin(admin.ModelAdmin):
     search_fields = ("card__player_name", "card__team", "notes")
     readonly_fields = ("created_at",)
     autocomplete_fields = ("card",)
+
+
+class GergVaultTenantMembershipInline(admin.TabularInline):
+    model = GergVaultTenantMembership
+    extra = 0
+    autocomplete_fields = ("user",)
+
+
+@admin.register(GergVaultTenant)
+class GergVaultTenantAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "created_by", "created_at")
+    search_fields = ("name", "slug", "created_by__username", "created_by__email")
+    readonly_fields = ("created_at", "updated_at")
+    autocomplete_fields = ("created_by",)
+    inlines = [GergVaultTenantMembershipInline]
+
+
+@admin.register(GergVaultUserProfile)
+class GergVaultUserProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "email_verified", "verification_sent_at", "verified_at", "created_at")
+    list_filter = ("email_verified", "created_at", "verified_at")
+    search_fields = ("user__username", "user__email", "verification_token")
+    readonly_fields = ("verification_token", "created_at", "updated_at")
+    autocomplete_fields = ("user",)
 
 
 @admin.register(GergVaultTrafficEvent)

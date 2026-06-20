@@ -4,7 +4,70 @@ from django.conf import settings
 from django.db import models
 
 
+class GergVaultTenant(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_gergvault_tenants",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class GergVaultTenantMembership(models.Model):
+    class Role(models.TextChoices):
+        OWNER = "owner", "Owner"
+        ADMIN = "admin", "Admin"
+        MEMBER = "member", "Member"
+
+    tenant = models.ForeignKey(GergVaultTenant, on_delete=models.CASCADE, related_name="memberships")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="gergvault_memberships")
+    role = models.CharField(max_length=32, choices=Role.choices, default=Role.MEMBER)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["tenant", "user"], name="gv_unique_tenant_user"),
+        ]
+        indexes = [
+            models.Index(fields=["user", "tenant"], name="gv_membership_user_tenant_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id} in {self.tenant_id} ({self.role})"
+
+
+class GergVaultUserProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="gergvault_profile")
+    email_verified = models.BooleanField(default=False, db_index=True)
+    verification_token = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
+    verification_sent_at = models.DateTimeField(null=True, blank=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"profile for {self.user_id}"
+
+
 class CardVaultLocation(models.Model):
+    tenant = models.ForeignKey(
+        GergVaultTenant,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="locations",
+    )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     parent = models.ForeignKey(
@@ -37,6 +100,13 @@ class CardVaultIntakeSession(models.Model):
         REJECTED = "rejected", "Rejected"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant = models.ForeignKey(
+        GergVaultTenant,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="intake_sessions",
+    )
     session_type = models.CharField(
         max_length=64,
         choices=SessionType.choices,
@@ -121,6 +191,10 @@ class CardVaultImage(models.Model):
     def __str__(self) -> str:
         return f"{self.get_role_display()} {self.original_filename or self.pk}"
 
+    @property
+    def protected_url(self) -> str:
+        return f"/card-vault/media/{self.pk}/"
+
 
 class CardVaultCard(models.Model):
     class ReviewStatus(models.TextChoices):
@@ -134,6 +208,13 @@ class CardVaultCard(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+        related_name="cards",
+    )
+    tenant = models.ForeignKey(
+        GergVaultTenant,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
         related_name="cards",
     )
     slot_index = models.PositiveSmallIntegerField(default=1, db_index=True)

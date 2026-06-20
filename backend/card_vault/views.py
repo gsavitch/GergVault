@@ -4,11 +4,11 @@ from threading import Thread
 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
+from django.core.mail import send_mail
 from django.db import close_old_connections, transaction
 from django.db.models import Count, OuterRef, Q, Subquery, Sum
-from django.http import JsonResponse
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -18,7 +18,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from card_vault.models import CardVaultCard, CardVaultImage, CardVaultIntakeSession, CardVaultPriceSnapshot, CardVaultValuationRun
+from card_vault.forms import GergVaultSignupForm
+from card_vault.models import CardVaultCard, CardVaultImage, CardVaultIntakeSession, CardVaultPriceSnapshot, CardVaultValuationRun, GergVaultUserProfile
 from card_vault.serializers import (
     CardVaultBatchIntakeSerializer,
     CardVaultCardSerializer,
@@ -41,6 +42,7 @@ from card_vault.services.valuation import (
     update_card_estimated_value,
 )
 from card_vault.services.pricing import provider_readiness, update_card_pricing
+from card_vault.tenancy import default_tenant_for_user, scope_queryset_to_user, tenant_ids_for_user
 
 AI_EXTRACTION_STALE_AFTER = timedelta(minutes=3)
 
@@ -49,19 +51,51 @@ def signup(request):
     if request.user.is_authenticated:
         return redirect("card_vault:dashboard")
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = GergVaultSignupForm(request.POST)
         if form.is_valid():
             user = form.save()
+            default_tenant_for_user(user)
+            profile = GergVaultUserProfile.objects.create(user=user, verification_sent_at=timezone.now())
+            _send_verification_email(request, user, profile)
             login(request, user)
             messages.success(request, "Account created. Upload your first front/back card batch when you are ready.")
             return redirect("card_vault:dashboard")
     else:
-        form = UserCreationForm()
+        form = GergVaultSignupForm()
     return render(request, "registration/signup.html", {"form": form})
 
 
+def verify_email(request, token):
+    profile = get_object_or_404(GergVaultUserProfile.objects.select_related("user"), verification_token=token)
+    profile.email_verified = True
+    profile.verified_at = timezone.now()
+    profile.save(update_fields=["email_verified", "verified_at", "updated_at"])
+    messages.success(request, "Email verified.")
+    if request.user.is_authenticated:
+        return redirect("card_vault:dashboard")
+    return redirect("login")
+
+
+def _send_verification_email(request, user, profile):
+    if not user.email:
+        return
+    verify_url = request.build_absolute_uri(f"/accounts/verify-email/{profile.verification_token}/")
+    try:
+        send_mail(
+            subject="Verify your GergVault account",
+            message=f"Verify your GergVault account: {verify_url}",
+            from_email=None,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+    except Exception:
+        return
+
+
 def _create_intake_session(*, user, title, sport, expected_count, front_group_image, back_group_image, notes=""):
+    tenant = default_tenant_for_user(user)
     session = CardVaultIntakeSession.objects.create(
+        tenant=tenant,
         session_type=CardVaultIntakeSession.SessionType.BATCH_FRONT_BACK,
         title=title,
         sport=sport,
@@ -98,6 +132,7 @@ def _create_intake_session(*, user, title, sport, expected_count, front_group_im
         cards.append(
             CardVaultCard(
                 session=session,
+                tenant=tenant,
                 slot_index=slot_index,
                 sport=sport,
                 extracted_json=draft,
@@ -151,13 +186,20 @@ class CardVaultIntakeSessionDetailView(RetrieveAPIView):
     queryset = CardVaultIntakeSession.objects.prefetch_related("images", "cards")
     lookup_field = "pk"
 
+    def get_queryset(self):
+        return scope_queryset_to_user(super().get_queryset(), self.request.user)
+
 
 class CardVaultCardUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def patch(self, request, session_id, card_id):
-        card = get_object_or_404(CardVaultCard, pk=card_id, session_id=session_id)
+        card = get_object_or_404(
+            scope_queryset_to_user(CardVaultCard.objects.all(), request.user),
+            pk=card_id,
+            session_id=session_id,
+        )
         serializer = CardVaultCardSerializer(card, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         card = serializer.save()
@@ -171,7 +213,11 @@ class CardVaultCardApproveView(APIView):
 
     @transaction.atomic
     def post(self, request, session_id, card_id):
-        card = get_object_or_404(CardVaultCard, pk=card_id, session_id=session_id)
+        card = get_object_or_404(
+            scope_queryset_to_user(CardVaultCard.objects.all(), request.user),
+            pk=card_id,
+            session_id=session_id,
+        )
         card.review_status = CardVaultCard.ReviewStatus.APPROVED
         card.is_draft = False
         card.approved_by = request.user
@@ -187,10 +233,11 @@ class CardVaultCardValuationRunsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, card_id):
-        card = get_object_or_404(CardVaultCard, pk=card_id)
+        card = get_object_or_404(scope_queryset_to_user(CardVaultCard.objects.all(), request.user), pk=card_id)
         return Response([_valuation_run_payload(run) for run in card.valuation_runs.prefetch_related("comps").all()])
 
     def post(self, request, card_id):
+        get_object_or_404(scope_queryset_to_user(CardVaultCard.objects.all(), request.user), pk=card_id)
         force = bool(request.data.get("force", True))
         providers = request.data.get("providers") or None
         result = update_card_pricing(card_id, force=force, providers=providers)
@@ -203,36 +250,43 @@ class CardVaultValuationRunDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, run_id):
-        run = get_object_or_404(CardVaultValuationRun.objects.prefetch_related("comps"), pk=run_id)
+        run = get_object_or_404(
+            CardVaultValuationRun.objects.filter(card__tenant_id__in=tenant_ids_for_user(request.user)).prefetch_related("comps"),
+            pk=run_id,
+        )
         return Response(_valuation_run_payload(run))
 
 
 @login_required
 def dashboard(request):
-    counts = CardVaultCard.objects.aggregate(
+    cards_qs = scope_queryset_to_user(CardVaultCard.objects.all(), request.user)
+    sessions_qs = scope_queryset_to_user(CardVaultIntakeSession.objects.all(), request.user)
+    counts = cards_qs.aggregate(
         total=Count("id"),
         needs_review=Count("id", filter=Q(review_status=CardVaultCard.ReviewStatus.NEEDS_REVIEW)),
         approved=Count("id", filter=Q(review_status=CardVaultCard.ReviewStatus.APPROVED)),
         ignored=Count("id", filter=Q(review_status=CardVaultCard.ReviewStatus.IGNORED)),
     )
     sessions = (
-        CardVaultIntakeSession.objects.annotate(card_count=Count("cards"))
+        sessions_qs.annotate(card_count=Count("cards"))
         .order_by("-created_at")[:12]
     )
     latest_snapshots = _latest_price_snapshots()
+    latest_snapshots = latest_snapshots.filter(card__tenant_id__in=tenant_ids_for_user(request.user))
     collection = latest_snapshots.aggregate(
         low=Sum("estimated_value_low"),
         mid=Sum("estimated_value_mid"),
         high=Sum("estimated_value_high"),
     )
-    missing_value = CardVaultCard.objects.filter(estimated_raw_value__isnull=True).exclude(
+    missing_value = cards_qs.filter(estimated_raw_value__isnull=True).exclude(
         review_status=CardVaultCard.ReviewStatus.IGNORED
     ).count()
     stale_cutoff = timezone.now() - timedelta(days=30)
-    stale_value = CardVaultCard.objects.filter(price_snapshots__created_at__lt=stale_cutoff).distinct().count()
-    top_cards = CardVaultCard.objects.filter(estimated_raw_value__isnull=False).order_by("-estimated_raw_value")[:10]
-    grading_cards = CardVaultValuationRun.objects.filter(grading_recommendation__icontains="Grade review").select_related("card")[:10]
-    low_confidence_runs = CardVaultValuationRun.objects.filter(confidence_label="low").select_related("card")[:10]
+    stale_value = cards_qs.filter(price_snapshots__created_at__lt=stale_cutoff).distinct().count()
+    top_cards = cards_qs.filter(estimated_raw_value__isnull=False).order_by("-estimated_raw_value")[:10]
+    valuation_runs_qs = CardVaultValuationRun.objects.filter(card__tenant_id__in=tenant_ids_for_user(request.user))
+    grading_cards = valuation_runs_qs.filter(grading_recommendation__icontains="Grade review").select_related("card")[:10]
+    low_confidence_runs = valuation_runs_qs.filter(confidence_label="low").select_related("card")[:10]
     return render(
         request,
         "card_vault/dashboard.html",
@@ -285,7 +339,7 @@ def create_batch_intake(request):
 @login_required
 def intake_review(request, session_id):
     session = get_object_or_404(
-        CardVaultIntakeSession.objects.prefetch_related("images", "cards"),
+        scope_queryset_to_user(CardVaultIntakeSession.objects.prefetch_related("images", "cards"), request.user),
         pk=session_id,
     )
     front_group_image = session.images.filter(role=CardVaultImage.ImageRole.FRONT_GROUP_ORIGINAL).first()
@@ -306,12 +360,12 @@ def intake_review(request, session_id):
 @login_required
 def card_detail(request, card_id):
     card = get_object_or_404(
-        CardVaultCard.objects.select_related(
+        scope_queryset_to_user(CardVaultCard.objects.select_related(
             "session",
             "front_image_crop",
             "back_image_crop",
             "location",
-        ),
+        ), request.user),
         pk=card_id,
     )
     front_group_image = None
@@ -403,7 +457,7 @@ def run_card_ai_enrichment(request, card_id):
     if request.method != "POST":
         return redirect("card_vault:card-detail", card_id=card_id)
     card = get_object_or_404(
-        CardVaultCard.objects.select_related("front_image_crop", "back_image_crop"),
+        scope_queryset_to_user(CardVaultCard.objects.select_related("front_image_crop", "back_image_crop"), request.user),
         pk=card_id,
     )
     mode = request.POST.get("mode") or "full"
@@ -425,7 +479,7 @@ def run_card_ai_enrichment(request, card_id):
 def update_card_value(request, card_id):
     if request.method != "POST":
         return redirect("card_vault:card-detail", card_id=card_id)
-    card = get_object_or_404(CardVaultCard, pk=card_id)
+    card = get_object_or_404(scope_queryset_to_user(CardVaultCard.objects.all(), request.user), pk=card_id)
     try:
         result = update_card_pricing(card.id, force=True)
     except CardVaultValuationError as exc:
@@ -449,7 +503,7 @@ def update_card_value(request, card_id):
 def update_session_values(request, session_id):
     if request.method != "POST":
         return redirect("card_vault:intake-review", session_id=session_id)
-    session = get_object_or_404(CardVaultIntakeSession, pk=session_id)
+    session = get_object_or_404(scope_queryset_to_user(CardVaultIntakeSession.objects.all(), request.user), pk=session_id)
     cards = session.cards.exclude(review_status=CardVaultCard.ReviewStatus.IGNORED).order_by("slot_index")
     updated = 0
     skipped: list[str] = []
@@ -487,27 +541,29 @@ def update_session_values(request, session_id):
 
 @login_required
 def card_valuations(request, card_id):
-    card = get_object_or_404(CardVaultCard, pk=card_id)
+    card = get_object_or_404(scope_queryset_to_user(CardVaultCard.objects.all(), request.user), pk=card_id)
     runs = card.valuation_runs.prefetch_related("comps").all()
     return render(request, "card_vault/card_valuations.html", {"card": card, "runs": runs})
 
 
 @login_required
 def pricing_dashboard(request):
-    snapshots = _latest_price_snapshots()
+    snapshots = _latest_price_snapshots().filter(card__tenant_id__in=tenant_ids_for_user(request.user))
     collection = snapshots.aggregate(
         low=Sum("estimated_value_low"),
         mid=Sum("estimated_value_mid"),
         high=Sum("estimated_value_high"),
     )
-    missing_value = CardVaultCard.objects.filter(estimated_raw_value__isnull=True).exclude(
+    cards_qs = scope_queryset_to_user(CardVaultCard.objects.all(), request.user)
+    missing_value = cards_qs.filter(estimated_raw_value__isnull=True).exclude(
         review_status=CardVaultCard.ReviewStatus.IGNORED
     ).count()
     stale_cutoff = timezone.now() - timedelta(days=30)
-    stale_value = CardVaultCard.objects.filter(price_snapshots__created_at__lt=stale_cutoff).distinct().count()
-    top_cards = CardVaultCard.objects.filter(estimated_raw_value__isnull=False).order_by("-estimated_raw_value")[:10]
-    grading_cards = CardVaultValuationRun.objects.filter(grading_recommendation__icontains="Grade review").select_related("card")[:25]
-    low_confidence_runs = CardVaultValuationRun.objects.filter(confidence_label="low").select_related("card")[:25]
+    stale_value = cards_qs.filter(price_snapshots__created_at__lt=stale_cutoff).distinct().count()
+    top_cards = cards_qs.filter(estimated_raw_value__isnull=False).order_by("-estimated_raw_value")[:10]
+    valuation_runs_qs = CardVaultValuationRun.objects.filter(card__tenant_id__in=tenant_ids_for_user(request.user))
+    grading_cards = valuation_runs_qs.filter(grading_recommendation__icontains="Grade review").select_related("card")[:25]
+    low_confidence_runs = valuation_runs_qs.filter(confidence_label="low").select_related("card")[:25]
     return render(
         request,
         "card_vault/pricing_dashboard.html",
@@ -527,7 +583,7 @@ def pricing_dashboard(request):
 def run_ai_extraction_from_review(request, session_id):
     if request.method != "POST":
         return redirect("card_vault:intake-review", session_id=session_id)
-    session = get_object_or_404(CardVaultIntakeSession, pk=session_id)
+    session = get_object_or_404(scope_queryset_to_user(CardVaultIntakeSession.objects.all(), request.user), pk=session_id)
     if _wants_json(request):
         if session.extraction_status in {"queued", "running"} and not _is_extraction_stale(session):
             return JsonResponse(_session_status_payload(session))
@@ -570,7 +626,7 @@ def run_ai_extraction_from_review(request, session_id):
 
 @login_required
 def ai_extraction_status(request, session_id):
-    session = get_object_or_404(CardVaultIntakeSession, pk=session_id)
+    session = get_object_or_404(scope_queryset_to_user(CardVaultIntakeSession.objects.all(), request.user), pk=session_id)
     return JsonResponse(_session_status_payload(session))
 
 
@@ -578,7 +634,7 @@ def ai_extraction_status(request, session_id):
 def regenerate_crops_from_review(request, session_id):
     if request.method != "POST":
         return redirect("card_vault:intake-review", session_id=session_id)
-    session = get_object_or_404(CardVaultIntakeSession, pk=session_id)
+    session = get_object_or_404(scope_queryset_to_user(CardVaultIntakeSession.objects.all(), request.user), pk=session_id)
     errors: list[str] = []
     crop_count = create_best_crops_for_session(
         session,
@@ -605,7 +661,11 @@ def regenerate_crops_from_review(request, session_id):
 def update_card_from_review(request, session_id, card_id):
     if request.method != "POST":
         return redirect("card_vault:intake-review", session_id=session_id)
-    card = get_object_or_404(CardVaultCard, pk=card_id, session_id=session_id)
+    card = get_object_or_404(
+        scope_queryset_to_user(CardVaultCard.objects.all(), request.user),
+        pk=card_id,
+        session_id=session_id,
+    )
     action = request.POST.get("action", "save")
     _apply_card_form(card, request.POST)
 
@@ -631,6 +691,21 @@ def update_card_from_review(request, session_id, card_id):
     if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
         return redirect(next_url)
     return redirect("card_vault:intake-review", session_id=session_id)
+
+
+@login_required
+def protected_card_vault_media(request, image_id):
+    image = get_object_or_404(
+        CardVaultImage.objects.select_related("session", "card"),
+        pk=image_id,
+    )
+    if not (
+        request.user.is_superuser
+        or image.session.tenant_id in tenant_ids_for_user(request.user)
+        or (image.session.tenant_id is None and image.session.created_by_id == request.user.id)
+    ):
+        return JsonResponse({"detail": "Not found."}, status=404)
+    return FileResponse(image.image.open("rb"), as_attachment=False, filename=image.original_filename or image.image.name)
 
 
 def _apply_card_form(card: CardVaultCard, post_data) -> None:

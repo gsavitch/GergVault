@@ -27,6 +27,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "card_vault.middleware.GergVaultRateLimitMiddleware",
     "card_vault.middleware.GergVaultTrafficMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -109,8 +110,17 @@ SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0") or "0")
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", "0").lower() in {"1", "true", "yes", "on"}
 SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD", "0").lower() in {"1", "true", "yes", "on"}
 SECURE_REFERRER_POLICY = os.environ.get("SECURE_REFERRER_POLICY", "same-origin")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@gergvault.halobridge.ai")
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 GERGVAULT_SERVE_MEDIA = os.environ.get("GERGVAULT_SERVE_MEDIA", "1").lower() in {"1", "true", "yes", "on"}
 GERGVAULT_TRACK_TRAFFIC = os.environ.get("GERGVAULT_TRACK_TRAFFIC", "1").lower() in {"1", "true", "yes", "on"}
+GERGVAULT_RATE_LIMIT_ENABLED = os.environ.get("GERGVAULT_RATE_LIMIT_ENABLED", "1").lower() in {"1", "true", "yes", "on"}
+GERGVAULT_RATE_LIMITS = {
+    "/accounts/login/": (int(os.environ.get("GERGVAULT_LOGIN_RATE_LIMIT", "20")), 300),
+    "/accounts/signup/": (int(os.environ.get("GERGVAULT_SIGNUP_RATE_LIMIT", "10")), 3600),
+    "/card-vault/intake/new/": (int(os.environ.get("GERGVAULT_UPLOAD_RATE_LIMIT", "30")), 3600),
+    "/api/card-vault/intake/batch/": (int(os.environ.get("GERGVAULT_API_UPLOAD_RATE_LIMIT", "30")), 3600),
+}
 GERGVAULT_TRAFFIC_EXCLUDED_PREFIXES = tuple(
     prefix.strip()
     for prefix in os.environ.get("GERGVAULT_TRAFFIC_EXCLUDED_PREFIXES", "/static/,/media/,/favicon.ico").split(",")

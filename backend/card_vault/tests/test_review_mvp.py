@@ -196,4 +196,23 @@ class CardVaultReviewMvpTests(TestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
         self.assertIn("Create your account", content)
+        self.assertIn("Email", content)
         self.assertIn("Create free account", content)
+
+    def test_signup_creates_tenant_and_profile(self):
+        self.client.logout()
+        response = self.client.post(
+            "/accounts/signup/",
+            data={
+                "username": "new-collector",
+                "email": "collector@example.com",
+                "password1": "CollectorPass-2026-Strong",
+                "password2": "CollectorPass-2026-Strong",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        user = get_user_model().objects.get(username="new-collector")
+        self.assertEqual(user.email, "collector@example.com")
+        self.assertTrue(user.gergvault_memberships.exists())
+        self.assertFalse(user.gergvault_profile.email_verified)

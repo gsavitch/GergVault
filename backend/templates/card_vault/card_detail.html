@@ -113,12 +113,12 @@
       <aside class="images">
         <section class="image-pane">
           {% if front_image %}
-            <a href="{{ front_image.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open card front image in a separate window">
-              <img src="{{ front_image.image.url }}" alt="Card front">
+            <a href="{{ front_image.protected_url }}" target="_blank" rel="noopener noreferrer" aria-label="Open card front image in a separate window">
+              <img src="{{ front_image.protected_url }}" alt="Card front">
             </a>
           {% elif front_group_image %}
-            <a href="{{ front_group_image.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open front group image in a separate window">
-              <img src="{{ front_group_image.image.url }}" alt="Front group image">
+            <a href="{{ front_group_image.protected_url }}" target="_blank" rel="noopener noreferrer" aria-label="Open front group image in a separate window">
+              <img src="{{ front_group_image.protected_url }}" alt="Front group image">
             </a>
           {% else %}
             <div class="placeholder">Front image pending</div>
@@ -127,12 +127,12 @@
         </section>
         <section class="image-pane">
           {% if back_image %}
-            <a href="{{ back_image.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open card back image in a separate window">
-              <img src="{{ back_image.image.url }}" alt="Card back">
+            <a href="{{ back_image.protected_url }}" target="_blank" rel="noopener noreferrer" aria-label="Open card back image in a separate window">
+              <img src="{{ back_image.protected_url }}" alt="Card back">
             </a>
           {% elif back_group_image %}
-            <a href="{{ back_group_image.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open back group image in a separate window">
-              <img src="{{ back_group_image.image.url }}" alt="Back group image">
+            <a href="{{ back_group_image.protected_url }}" target="_blank" rel="noopener noreferrer" aria-label="Open back group image in a separate window">
+              <img src="{{ back_group_image.protected_url }}" alt="Back group image">
             </a>
           {% else %}
             <div class="placeholder">Back image pending</div>

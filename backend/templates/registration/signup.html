@@ -46,6 +46,7 @@
         {% csrf_token %}
         {{ form.non_field_errors }}
         <label>Username {{ form.username }}{{ form.username.errors }}</label>
+        <label>Email {{ form.email }}{{ form.email.errors }}</label>
         <label>Password {{ form.password1 }}{{ form.password1.errors }}</label>
         <label>Confirm password {{ form.password2 }}{{ form.password2.errors }}</label>
         <button type="submit">Create free account</button>

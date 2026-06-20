@@ -1,8 +1,20 @@
 from time import monotonic
 
 from django.conf import settings
+from django.core.cache import cache
+from django.http import HttpResponse
 
 from card_vault.models import GergVaultTrafficEvent
+
+
+class GergVaultRateLimitMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if _is_rate_limited(request):
+            return HttpResponse("Too many requests. Please wait and try again.", status=429)
+        return self.get_response(request)
 
 
 class GergVaultTrafficMiddleware:
@@ -75,3 +87,36 @@ def _client_ip(request):
         forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR") or ""
         raw = forwarded_for.split(",", 1)[0].strip()
     return raw or None
+
+
+def _is_rate_limited(request) -> bool:
+    if not getattr(settings, "GERGVAULT_RATE_LIMIT_ENABLED", True):
+        return False
+    if request.method != "POST":
+        return False
+    path = request.path or "/"
+    limits = getattr(settings, "GERGVAULT_RATE_LIMITS", {})
+    limit = None
+    for prefix, configured_limit in limits.items():
+        if path.startswith(prefix):
+            limit = configured_limit
+            break
+    if not limit:
+        return False
+    max_requests, window_seconds = limit
+    identity = _rate_limit_identity(request)
+    cache_key = f"gv_rl:{path}:{identity}"
+    current = cache.get(cache_key, 0)
+    if current >= max_requests:
+        return True
+    if current == 0:
+        cache.set(cache_key, 1, timeout=window_seconds)
+    else:
+        cache.incr(cache_key)
+    return False
+
+
+def _rate_limit_identity(request) -> str:
+    if getattr(request, "user", None) and request.user.is_authenticated:
+        return f"user:{request.user.pk}"
+    return f"ip:{_client_ip(request) or 'unknown'}"

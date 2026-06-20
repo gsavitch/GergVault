@@ -357,7 +357,7 @@ class CardVaultImageSerializer(serializers.ModelSerializer):
         if not obj.image:
             return ""
         request = self.context.get("request")
-        url = obj.image.url
+        url = obj.protected_url
         return request.build_absolute_uri(url) if request else url
 
 

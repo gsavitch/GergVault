@@ -9,6 +9,7 @@ from card_vault.models import CardVaultCard, CardVaultComp, CardVaultIntakeSessi
 from card_vault.services.pricing.confidence import robust_range
 from card_vault.services.pricing.engine import calculate_pricing, provider_readiness, update_card_pricing
 from card_vault.services.pricing.normalization import comp_match_flags, normalized_card
+from card_vault.tenancy import default_tenant_for_user
 
 
 def card_stub(**overrides):
@@ -167,8 +168,15 @@ class PricingIntelligencePureTests(SimpleTestCase):
 class PricingIntelligenceDbTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username="pricing-user", password="test-password")
-        self.session = CardVaultIntakeSession.objects.create(title="Pricing", expected_card_count=1)
+        self.tenant = default_tenant_for_user(self.user)
+        self.session = CardVaultIntakeSession.objects.create(
+            tenant=self.tenant,
+            title="Pricing",
+            expected_card_count=1,
+            created_by=self.user,
+        )
         self.card = CardVaultCard.objects.create(
+            tenant=self.tenant,
             session=self.session,
             slot_index=1,
             player_name="Maya Moore",
