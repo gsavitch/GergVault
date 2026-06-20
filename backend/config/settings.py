@@ -26,6 +26,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "card_vault.middleware.GergVaultTrafficMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -90,6 +91,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/card-vault/"
 LOGOUT_REDIRECT_URL = "/"
+GERGVAULT_TRACK_TRAFFIC = os.environ.get("GERGVAULT_TRACK_TRAFFIC", "1").lower() in {"1", "true", "yes", "on"}
+GERGVAULT_TRAFFIC_EXCLUDED_PREFIXES = tuple(
+    prefix.strip()
+    for prefix in os.environ.get("GERGVAULT_TRAFFIC_EXCLUDED_PREFIXES", "/static/,/media/,/favicon.ico").split(",")
+    if prefix.strip()
+)
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],

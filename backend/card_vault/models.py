@@ -381,3 +381,47 @@ class CardVaultPriceSnapshot(models.Model):
 
     def __str__(self) -> str:
         return f"snapshot {self.pk} for card {self.card_id}"
+
+
+class GergVaultTrafficEvent(models.Model):
+    class EventType(models.TextChoices):
+        PAGE_VIEW = "page_view", "Page view"
+        API_REQUEST = "api_request", "API request"
+        AUTH = "auth", "Auth"
+        ADMIN = "admin", "Admin"
+        OTHER = "other", "Other"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="gergvault_traffic_events",
+    )
+    session_key = models.CharField(max_length=64, blank=True, db_index=True)
+    event_type = models.CharField(max_length=32, choices=EventType.choices, default=EventType.PAGE_VIEW, db_index=True)
+    path = models.CharField(max_length=512, db_index=True)
+    route_name = models.CharField(max_length=255, blank=True, db_index=True)
+    method = models.CharField(max_length=12, default="GET")
+    status_code = models.PositiveSmallIntegerField(default=200, db_index=True)
+    duration_ms = models.PositiveIntegerField(default=0)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    forwarded_for = models.CharField(max_length=512, blank=True)
+    user_agent = models.TextField(blank=True)
+    referrer = models.TextField(blank=True)
+    host = models.CharField(max_length=255, blank=True)
+    query_string_present = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["event_type", "-created_at"], name="gv_traffic_type_created_idx"),
+            models.Index(fields=["user", "-created_at"], name="gv_traffic_user_created_idx"),
+            models.Index(fields=["status_code", "-created_at"], name="gv_traffic_status_created_idx"),
+            models.Index(fields=["path", "-created_at"], name="gv_traffic_path_created_idx"),
+        ]
+
+    def __str__(self) -> str:
+        user = self.user_id or "anon"
+        return f"{self.created_at} {self.status_code} {self.method} {self.path} ({user})"

@@ -6,6 +6,7 @@ from card_vault.models import (
     CardVaultIntakeSession,
     CardVaultLocation,
     CardVaultValuation,
+    GergVaultTrafficEvent,
 )
 
 
@@ -84,3 +85,44 @@ class CardVaultValuationAdmin(admin.ModelAdmin):
     search_fields = ("card__player_name", "card__team", "notes")
     readonly_fields = ("created_at",)
     autocomplete_fields = ("card",)
+
+
+@admin.register(GergVaultTrafficEvent)
+class GergVaultTrafficEventAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at",
+        "event_type",
+        "user",
+        "method",
+        "status_code",
+        "duration_ms",
+        "path",
+        "ip_address",
+    )
+    list_filter = ("event_type", "status_code", "method", "created_at")
+    search_fields = ("path", "route_name", "user__username", "ip_address", "user_agent", "referrer")
+    readonly_fields = (
+        "user",
+        "session_key",
+        "event_type",
+        "path",
+        "route_name",
+        "method",
+        "status_code",
+        "duration_ms",
+        "ip_address",
+        "forwarded_for",
+        "user_agent",
+        "referrer",
+        "host",
+        "query_string_present",
+        "created_at",
+    )
+    date_hierarchy = "created_at"
+    list_select_related = ("user",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
