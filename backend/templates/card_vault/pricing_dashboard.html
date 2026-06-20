@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Card Vault Pricing Dashboard</title>
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: #f7f7f4; color: #172026; }
+    header { padding: 22px 24px; background: #172026; color: #fff; }
+    main { max-width: 1180px; margin: 0 auto; padding: 22px; }
+    .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .tile, .panel { background: #fff; border: 1px solid #d9ddd8; border-radius: 8px; padding: 16px; }
+    .tile strong { display: block; font-size: 26px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid #d9ddd8; text-align: left; font-size: 14px; }
+    th { color: #5e6a70; background: #fbfbf8; }
+    a { color: #1f6f5b; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Card Vault Pricing Intelligence</h1>
+    <div><a href="{% url 'card_vault:dashboard' %}">Back to Card Vault</a></div>
+  </header>
+  <main>
+    <section class="counts">
+      <article class="tile"><strong>{% if collection.low %}${{ collection.low }}{% else %}-{% endif %}</strong><span>Total low</span></article>
+      <article class="tile"><strong>{% if collection.mid %}${{ collection.mid }}{% else %}-{% endif %}</strong><span>Total midpoint</span></article>
+      <article class="tile"><strong>{% if collection.high %}${{ collection.high }}{% else %}-{% endif %}</strong><span>Total high</span></article>
+      <article class="tile"><strong>{{ missing_value }}</strong><span>Cards missing value</span></article>
+      <article class="tile"><strong>{{ stale_value }}</strong><span>Cards with stale values</span></article>
+    </section>
+    <section class="panel">
+      <h2>Provider Readiness</h2>
+      <p>Rough search-based estimates are low-confidence only. Verified estimates improve when sold-listing or guide providers are configured.</p>
+      <table>
+        <thead>
+          <tr><th>Provider</th><th>Status</th><th>Environment</th><th>What it improves</th></tr>
+        </thead>
+        <tbody>
+          {% for key, provider in provider_status.items %}
+            <tr>
+              <td>{{ provider.label }}</td>
+              <td>{% if provider.configured %}configured{% else %}missing{% endif %}</td>
+              <td>{% if provider.missing_env_vars %}{{ provider.missing_env_vars|join:", " }}{% else %}ready{% endif %}</td>
+              <td>{{ provider.help_text }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p>Setup docs: <code>backend/card_vault/docs/pricing_provider_setup.md</code></p>
+    </section>
+    <section class="panel">
+      <h2>Top 10 Highest-Value Cards</h2>
+      <table>
+        <tbody>
+          {% for card in top_cards %}
+            <tr><td><a href="{% url 'card_vault:card-detail' card.id %}">{{ card.player_name|default:"Card" }}</a></td><td>${{ card.estimated_raw_value }}</td></tr>
+          {% empty %}
+            <tr><td>No valued cards yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    <section class="panel">
+      <h2>Cards Recommended for Grading</h2>
+      <table>
+        <tbody>
+          {% for run in grading_cards %}
+            <tr><td><a href="{% url 'card_vault:card-detail' run.card.id %}">{{ run.card.player_name|default:"Card" }}</a></td><td>{{ run.grading_recommendation }}</td></tr>
+          {% empty %}
+            <tr><td>No grading recommendations yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    <section class="panel">
+      <h2>Low-Confidence Valuations Needing Review</h2>
+      <table>
+        <tbody>
+          {% for run in low_confidence_runs %}
+            <tr><td><a href="{% url 'card_vault:card-valuations' run.card.id %}">{{ run.card.player_name|default:"Card" }}</a></td><td>{{ run.pricing_explanation }}</td></tr>
+          {% empty %}
+            <tr><td>No low-confidence runs yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

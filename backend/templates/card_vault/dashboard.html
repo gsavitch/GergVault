@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Card Vault Dashboard</title>
+  <style>
+    :root { --ink: #1e2428; --muted: #5e6a70; --line: #d9ddd8; --panel: #fff; --bg: #f7f7f4; --accent: #1f6f5b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: var(--bg); color: var(--ink); }
+    header { padding: 22px 24px; background: #172026; color: #fff; }
+    main { max-width: 1180px; margin: 0 auto; padding: 22px; }
+    h1 { margin: 0; font-size: 24px; }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    .meta { color: #d4ddd8; margin-top: 6px; }
+    .crumbs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; color: #d4ddd8; font-size: 14px; }
+    .crumbs a { color: #fff; text-decoration: none; font-weight: 750; }
+    .crumbs span { color: #9fb0aa; }
+    .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .tile, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+    .tile strong { display: block; font-size: 30px; margin-bottom: 4px; }
+    .tile span { color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; font-size: 14px; }
+    th { color: var(--muted); font-weight: 650; background: #fbfbf8; }
+    tr:last-child td { border-bottom: 0; }
+    a { color: var(--accent); font-weight: 650; }
+    code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Open Card Vault</h1>
+    <div class="meta">Batch card intake review dashboard</div>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      <span>/</span>
+      <strong>Card Vault</strong>
+    </nav>
+  </header>
+  <main>
+    <section class="counts" aria-label="Card counts">
+      <article class="tile"><strong>{{ counts.total|default:0 }}</strong><span>Total cards</span></article>
+      <article class="tile"><strong>{{ counts.needs_review|default:0 }}</strong><span>Needs review</span></article>
+      <article class="tile"><strong>{{ counts.approved|default:0 }}</strong><span>Approved</span></article>
+      <article class="tile"><strong>{{ counts.ignored|default:0 }}</strong><span>Ignored</span></article>
+      <article class="tile"><strong>{% if collection.mid %}${{ collection.mid }}{% else %}-{% endif %}</strong><span>Collection midpoint</span></article>
+      <article class="tile"><strong>{{ missing_value }}</strong><span>Missing value</span></article>
+      <article class="tile"><strong>{{ stale_value }}</strong><span>Stale values</span></article>
+    </section>
+
+    <section class="panel" aria-label="Pricing intelligence">
+      <h2>Pricing Intelligence</h2>
+      <p>Total estimated collection range:
+        {% if collection.low and collection.high %}${{ collection.low }}-${{ collection.high }}{% else %}-{% endif %}
+      </p>
+      <p><a href="{% url 'card_vault:pricing-dashboard' %}">Open pricing dashboard</a></p>
+    </section>
+
+    <section class="panel" aria-label="Recent intake sessions">
+      <h2>Recent Intake Sessions</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Session</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Cards</th>
+            <th>Created</th>
+            <th>Review</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for session in sessions %}
+            <tr>
+              <td><code>{{ session.id }}</code></td>
+              <td>{{ session.session_type }}</td>
+              <td>{{ session.review_status }}</td>
+              <td>{{ session.card_count }}</td>
+              <td>{{ session.created_at }}</td>
+              <td><a href="{% url 'card_vault:intake-review' session.id %}">Review session</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6">No Card Vault intake sessions yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

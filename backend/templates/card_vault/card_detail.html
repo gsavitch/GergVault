@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Card Vault Card Detail</title>
+  <style>
+    :root { --ink: #172026; --muted: #667176; --line: #d8ddd8; --panel: #fff; --soft: #f5f6f2; --vault: #14211f; --green: #1f6f5b; --red: #8b2f2f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: var(--soft); color: var(--ink); }
+    header { background: radial-gradient(circle at top left, #29413b, var(--vault)); color: #fff; padding: 20px 24px; }
+    main { max-width: 1260px; margin: 0 auto; padding: 18px; }
+    h1, h2 { margin: 0; }
+    a { color: inherit; }
+    button { border: 0; border-radius: 7px; padding: 9px 12px; background: var(--green); color: #fff; font-weight: 700; cursor: pointer; }
+    button.secondary { background: #4d5960; }
+    button.danger { background: var(--red); }
+    input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 7px; padding: 8px; font: inherit; }
+    textarea { min-height: 44px; resize: vertical; }
+    label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; }
+    code { overflow-wrap: anywhere; white-space: pre-wrap; }
+    .topbar { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+    .meta { color: #d9e2dd; margin-top: 6px; }
+    .crumbs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; color: #d9e2dd; font-size: 14px; }
+    .crumbs a { color: #fff; text-decoration: none; font-weight: 750; }
+    .crumbs span { color: #a9b8b2; }
+    .layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+    .images { display: grid; gap: 12px; }
+    .image-pane { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fbfbf8; }
+    .image-pane a { display: block; cursor: zoom-in; }
+    .image-pane img { width: 100%; max-height: 430px; object-fit: contain; display: block; }
+    .placeholder { min-height: 220px; display: grid; place-items: center; color: var(--muted); text-align: center; padding: 14px; }
+    .caption { border-top: 1px solid var(--line); padding: 8px; color: var(--muted); font-size: 12px; background: #fff; }
+    .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+    .fact { background: #fbfbf8; border: 1px solid var(--line); border-radius: 7px; padding: 9px; }
+    .fact span { color: var(--muted); font-size: 11px; display: block; }
+    .fact strong { overflow-wrap: anywhere; }
+    .section-grid { display: grid; gap: 12px; margin-top: 14px; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .field { border: 1px solid var(--line); border-radius: 7px; padding: 9px; background: #fbfbf8; min-width: 0; }
+    .field span { color: var(--muted); font-size: 11px; display: block; }
+    .field strong, .field div { overflow-wrap: anywhere; }
+    .field.wide { grid-column: span 2; }
+    .link-list { display: grid; gap: 8px; }
+    .link-list a { color: var(--green); font-weight: 750; overflow-wrap: anywhere; }
+    .form-grid { display: grid; grid-template-columns: repeat(3, minmax(130px, 1fr)); gap: 10px; }
+    .wide { grid-column: span 2; }
+    .checks, .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+    .checks label { display: flex; align-items: center; gap: 7px; color: var(--ink); font-size: 13px; }
+    .checks input { width: auto; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #edf0ec; color: #475258; font-size: 12px; font-weight: 700; }
+    .notice { padding: 10px 12px; border-radius: 7px; margin-bottom: 10px; background: #e9f4ef; border: 1px solid #bfdfd1; color: #164f40; }
+    .notice.error { background: #f8e9e7; border-color: #e2beb8; color: #7a2923; }
+    .notice.warning { background: #fbf2dd; border-color: #ead49b; color: #6f4c00; }
+    .ai-panel { margin-top: 16px; display: grid; gap: 12px; }
+    .ai-controls { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(180px, 1fr); gap: 10px; }
+    .run-list { display: grid; gap: 10px; }
+    .run-card { border: 1px solid var(--line); border-radius: 7px; padding: 10px; background: #fbfbf8; }
+    .run-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .candidate-list { display: grid; gap: 8px; margin-top: 8px; }
+    .candidate { border-top: 1px solid var(--line); padding-top: 8px; }
+    .candidate a { color: var(--green); font-weight: 700; overflow-wrap: anywhere; }
+    .comp-list { display: grid; gap: 8px; margin-top: 10px; }
+    .comp { border-top: 1px solid var(--line); padding-top: 8px; }
+    .comp a { color: var(--green); font-weight: 750; overflow-wrap: anywhere; }
+    .low-confidence { color: #7a2923; font-weight: 750; }
+    select { width: 100%; border: 1px solid var(--line); border-radius: 7px; padding: 8px; font: inherit; background: #fff; }
+    @media (max-width: 920px) {
+      .layout { grid-template-columns: 1fr; }
+      .form-grid, .facts { grid-template-columns: 1fr 1fr; }
+      .wide { grid-column: span 2; }
+    }
+    @media (max-width: 520px) {
+      main { padding: 12px; }
+      .form-grid, .facts { grid-template-columns: 1fr; }
+      .wide { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div>
+        <h1>{{ card.player_name|default:"Card detail" }}</h1>
+        <div class="meta">Slot {{ card.slot_index }} | {{ card.review_status }}</div>
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <a href="/">Home</a>
+          <span>/</span>
+          <a href="{% url 'card_vault:dashboard' %}">Card Vault</a>
+          {% if card.session %}
+            <span>/</span>
+            <a href="{% url 'card_vault:intake-review' card.session.id %}">Review Session</a>
+          {% endif %}
+          <span>/</span>
+          <strong>Card {{ card.slot_index }}</strong>
+        </nav>
+      </div>
+      {% if card.session %}
+        <a class="meta" href="{% url 'card_vault:intake-review' card.session.id %}">Back to intake review</a>
+      {% else %}
+        <a class="meta" href="{% url 'card_vault:dashboard' %}">Card Vault Dashboard</a>
+      {% endif %}
+    </div>
+  </header>
+  <main>
+    {% if messages %}
+      {% for message in messages %}
+        <div class="notice {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    <div class="layout">
+      <aside class="images">
+        <section class="image-pane">
+          {% if front_image %}
+            <a href="{{ front_image.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open card front image in a separate window">
+              <img src="{{ front_image.image.url }}" alt="Card front">
+            </a>
+          {% elif front_group_image %}
+            <a href="{{ front_group_image.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open front group image in a separate window">
+              <img src="{{ front_group_image.image.url }}" alt="Front group image">
+            </a>
+          {% else %}
+            <div class="placeholder">Front image pending</div>
+          {% endif %}
+          <div class="caption">Front image{% if not front_image and front_group_image %} - showing group photo until crop exists{% endif %}</div>
+        </section>
+        <section class="image-pane">
+          {% if back_image %}
+            <a href="{{ back_image.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open card back image in a separate window">
+              <img src="{{ back_image.image.url }}" alt="Card back">
+            </a>
+          {% elif back_group_image %}
+            <a href="{{ back_group_image.image.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open back group image in a separate window">
+              <img src="{{ back_group_image.image.url }}" alt="Back group image">
+            </a>
+          {% else %}
+            <div class="placeholder">Back image pending</div>
+          {% endif %}
+          <div class="caption">Back image{% if not back_image and back_group_image %} - showing group photo until crop exists{% endif %}</div>
+        </section>
+      </aside>
+
+      <section class="panel">
+        <h2>Card Summary</h2>
+        <div class="facts">
+          <div class="fact"><span>Team</span><strong>{{ card.team|default:"-" }}</strong></div>
+          <div class="fact"><span>Set/Product</span><strong>{{ card.set_name|default:card.product|default:"-" }}</strong></div>
+          <div class="fact"><span>Card #</span><strong>{{ card.card_number|default:"-" }}</strong></div>
+          <div class="fact"><span>Storage location</span><strong>{{ card.location|default:"Assign later" }}</strong></div>
+          <div class="fact"><span>Storage recommendation</span><strong>{{ card.storage_recommendation|default:"-" }}</strong></div>
+          <div class="fact"><span>Estimated value</span><strong>{% if pricing.estimated_value_low and pricing.estimated_value_high %}${{ pricing.estimated_value_low }}-${{ pricing.estimated_value_high }}{% elif card.estimated_raw_value %}${{ card.estimated_raw_value }}{% elif pricing.rough_estimate_warning %}{{ pricing.rough_estimate_warning }}{% elif pricing.value_status_label %}{{ pricing.value_status_label }}{% else %}Not priced yet{% endif %}</strong></div>
+          <div class="fact"><span>Value confidence</span><strong>{{ valuation.confidence|default:"-" }}</strong></div>
+          <div class="fact"><span>Value updated</span><strong>{{ valuation.valuation_date|default:"-" }}</strong></div>
+          <div class="fact"><span>Confidence</span><strong>{{ card.confidence }}</strong></div>
+          <div class="fact"><span>Status</span><strong>{{ card.review_status }}</strong></div>
+          <div class="fact"><span>Flags</span><strong>{% if card.rookie_status %}<span class="badge">Rookie</span>{% endif %} {% if card.autograph_detected %}<span class="badge">Auto</span>{% endif %} {% if card.relic_detected or card.patch_detected %}<span class="badge">Jersey/Patch</span>{% endif %}</strong></div>
+        </div>
+
+        <div class="section-grid">
+          <section class="panel">
+            <h2>Player Profile</h2>
+            <div class="field-grid">
+              <div class="field"><span>Full name</span><strong>{{ metadata_sections.player_profile.player_full_name|default:"-" }}</strong></div>
+              <div class="field"><span>Slug</span><strong>{{ metadata_sections.player_profile.player_slug|default:"-" }}</strong></div>
+              <div class="field"><span>Position</span><strong>{{ metadata_sections.player_profile.player_position|default:"-" }}</strong></div>
+              <div class="field"><span>Status</span><strong>{{ metadata_sections.player_profile.player_status|default:"-" }}</strong></div>
+              <div class="field"><span>Hall of Fame</span><strong>{{ metadata_sections.player_profile.hall_of_fame_status|default:"-" }}</strong></div>
+              <div class="field wide"><span>Career summary</span><div>{{ metadata_sections.player_profile.career_summary_short|default:"-" }}</div></div>
+              <div class="field wide"><span>Awards / honors</span><div>{{ metadata_sections.player_profile.player_awards_summary|default:"-" }}</div></div>
+              <div class="field wide"><span>Career stats summary</span><div>{{ metadata_sections.player_profile.career_stats_summary|default:"-" }}</div></div>
+              <div class="field wide"><span>Career stats</span><div>{{ metadata_sections.player_profile.career_stats|default:"-" }}</div></div>
+              <div class="field wide"><span>Latest season stats</span><div>{{ metadata_sections.player_profile.latest_season_stats|default:"-" }}</div></div>
+              <div class="field wide"><span>Bio links</span>
+                <div class="link-list">
+                  {% if metadata_sections.player_profile.player_wikipedia_url %}<a href="{{ metadata_sections.player_profile.player_wikipedia_url }}" target="_blank" rel="noopener noreferrer">Wikipedia</a>{% endif %}
+                  {% if metadata_sections.player_profile.player_official_profile_url %}<a href="{{ metadata_sections.player_profile.player_official_profile_url }}" target="_blank" rel="noopener noreferrer">Official profile</a>{% endif %}
+                  {% if metadata_sections.player_profile.league_player_profile_url %}<a href="{{ metadata_sections.player_profile.league_player_profile_url }}" target="_blank" rel="noopener noreferrer">League profile</a>{% endif %}
+                  {% if metadata_sections.player_profile.team_profile_url %}<a href="{{ metadata_sections.player_profile.team_profile_url }}" target="_blank" rel="noopener noreferrer">Team profile</a>{% endif %}
+                  {% if metadata_sections.external_links.basketball_reference_url %}<a href="{{ metadata_sections.external_links.basketball_reference_url }}" target="_blank" rel="noopener noreferrer">Basketball Reference</a>{% endif %}
+                  {% if metadata_sections.external_links.sports_reference_url %}<a href="{{ metadata_sections.external_links.sports_reference_url }}" target="_blank" rel="noopener noreferrer">Sports Reference</a>{% endif %}
+                  {% if metadata_sections.external_links.wnba_profile_url %}<a href="{{ metadata_sections.external_links.wnba_profile_url }}" target="_blank" rel="noopener noreferrer">WNBA profile</a>{% endif %}
+                  {% if metadata_sections.external_links.nba_profile_url %}<a href="{{ metadata_sections.external_links.nba_profile_url }}" target="_blank" rel="noopener noreferrer">NBA profile</a>{% endif %}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2>Card Type Explanation</h2>
+            <div class="field-grid">
+              <div class="field"><span>Card type</span><strong>{{ metadata_sections.card_classification.card_type|default:"unknown" }}</strong></div>
+              <div class="field"><span>Rarity tier</span><strong>{{ metadata_sections.card_classification.rarity_tier|default:"unknown" }}</strong></div>
+              <div class="field"><span>Collector interest</span><strong>{{ metadata_sections.card_classification.collector_interest_score|default:"-" }}</strong></div>
+              <div class="field"><span>Investment score</span><strong>{{ metadata_sections.card_classification.investment_score|default:"-" }}</strong></div>
+              <div class="field"><span>Grading candidate</span><strong>{{ metadata_sections.card_classification.grading_candidate_score|default:"-" }}</strong></div>
+              <div class="field wide"><span>Classification</span><div>{{ metadata_sections.card_classification.card_type_explanation|default:"-" }}</div></div>
+              <div class="field wide"><span>Rarity explanation</span><div>{{ metadata_sections.card_classification.rarity_explanation|default:"-" }}</div></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2>Product / Checklist</h2>
+            <div class="field-grid">
+              <div class="field"><span>Manufacturer</span><strong>{{ metadata_sections.product_checklist.manufacturer|default:"-" }}</strong></div>
+              <div class="field"><span>Product line</span><strong>{{ metadata_sections.product_checklist.product_line|default:"-" }}</strong></div>
+              <div class="field"><span>Release year</span><strong>{{ metadata_sections.product_checklist.release_year|default:"-" }}</strong></div>
+              <div class="field"><span>Checklist name</span><strong>{{ metadata_sections.product_checklist.checklist_name|default:"-" }}</strong></div>
+              <div class="field wide"><span>Checklist card title</span><div>{{ metadata_sections.product_checklist.checklist_card_title|default:"-" }}</div></div>
+              <div class="field wide"><span>Known parallel family</span><div>{{ metadata_sections.product_checklist.known_parallel_family|default:"-" }}</div></div>
+              <div class="field wide"><span>Possible parallel matches</span><div>{{ metadata_sections.product_checklist.possible_parallel_matches|default:"-" }}</div></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="panel" style="margin:14px 0;">
+          <h2>Pricing Intelligence / Market Estimate</h2>
+          <p class="meta" style="color:var(--muted);">Estimated value only. Based on available comps and sources. Actual sale price depends on condition, timing, grading, demand, and buyer interest.</p>
+          <div class="field-grid" style="margin-top:10px;">
+            <div class="field"><span>Estimated range</span><strong>{% if pricing.estimated_value_low and pricing.estimated_value_high %}${{ pricing.estimated_value_low }}-${{ pricing.estimated_value_high }}{% else %}-{% endif %}</strong></div>
+            <div class="field"><span>Midpoint</span><strong>{% if pricing.estimated_value_mid %}${{ pricing.estimated_value_mid }}{% else %}-{% endif %}</strong></div>
+            <div class="field"><span>Value status</span><strong>{{ pricing.value_status_label|default:"No reliable estimate" }}</strong></div>
+            <div class="field"><span>Confidence</span><strong>{{ pricing.confidence_label|default:"low" }}{% if pricing.confidence_score %} ({{ pricing.confidence_score }}){% endif %}</strong></div>
+            <div class="field"><span>Last updated</span><strong>{{ pricing.last_updated|default:"-" }}</strong></div>
+            <div class="field"><span>Comps found</span><strong>{{ pricing.comp_count_total|default:"0" }}</strong></div>
+            <div class="field"><span>Sold comps</span><strong>{{ pricing.sold_comp_count|default:"0" }}</strong></div>
+            <div class="field"><span>Active listings</span><strong>{{ pricing.active_listing_count|default:"0" }}</strong></div>
+            <div class="field"><span>Guide sources</span><strong>{{ pricing.guide_source_count|default:"0" }}</strong></div>
+            <div class="field"><span>Search hints</span><strong>{{ pricing.search_hint_count|default:"0" }}</strong></div>
+            <div class="field"><span>PSA 9 estimate</span><strong>{% if pricing.estimated_psa9_value_mid %}${{ pricing.estimated_psa9_value_low }}-${{ pricing.estimated_psa9_value_high }}{% else %}-{% endif %}</strong></div>
+            <div class="field"><span>PSA 10 estimate</span><strong>{% if pricing.estimated_psa10_value_mid %}${{ pricing.estimated_psa10_value_low }}-${{ pricing.estimated_psa10_value_high }}{% else %}-{% endif %}</strong></div>
+            <div class="field wide"><span>Summary</span><div>{{ pricing.pricing_summary|default:"No reliable raw estimate yet." }}</div></div>
+            <div class="field wide"><span>Why confidence is high/medium/low</span><div>{{ pricing.pricing_explanation|default:pricing.confidence_explanation|default:"No pricing run yet." }}</div></div>
+            <div class="field wide"><span>Grading recommendation</span><div>{{ pricing.grading_recommendation|default:"Inspect condition first." }}</div></div>
+          </div>
+          {% if pricing.rough_estimate_warning %}
+            <div class="notice warning" style="margin-top:10px;">{{ pricing.rough_estimate_warning }}</div>
+          {% endif %}
+          <section class="panel" style="margin:14px 0 0;">
+            <h3>Provider Status</h3>
+            <div class="field-grid" style="margin-top:10px;">
+              {% for key, provider in pricing.provider_status.items %}
+                <div class="field">
+                  <span>{{ provider.label }}</span>
+                  <strong>{% if provider.configured %}configured{% else %}missing{% endif %}</strong>
+                  <div>{{ provider.help_text }}</div>
+                  {% if provider.missing_env_vars %}
+                    <div class="meta" style="color:var(--muted);">Missing: {{ provider.missing_env_vars|join:", " }}</div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+            <p class="meta" style="color:var(--muted);">eBay Browse, SportsCardsPro, PriceCharting, and PSA keys improve values by adding stronger sold, guide, and population data.</p>
+          </section>
+          <form method="post" action="{% url 'card_vault:card-update-value' card.id %}" class="actions js-working-form" data-working-label="Updating estimated value...">
+            {% csrf_token %}
+            <button type="submit">Update Estimated Value</button>
+            <a class="badge" href="{% url 'card_vault:card-valuations' card.id %}">View comps table</a>
+          </form>
+          {% if valuation.warning %}
+            <div class="notice warning" style="margin-top:10px;">{{ valuation.warning }}</div>
+          {% elif valuation.confidence and valuation.confidence < 0.5 %}
+            <div class="notice warning" style="margin-top:10px;">Low-confidence estimate; confirm exact comps manually.</div>
+          {% endif %}
+          <div class="comp-list">
+            {% for comp in pricing.valuation_sources|slice:":3" %}
+              <div class="comp">
+                <a href="{{ comp.url }}" target="_blank" rel="noopener noreferrer">{{ comp.title|default:comp.url }}</a>
+                <div class="meta" style="color:var(--muted);">{{ comp.provider }} | {{ comp.source_type }}{% if comp.price %} | ${{ comp.price }}{% endif %}{% if comp.excluded %} | excluded: {{ comp.exclusion_reason }}{% endif %}</div>
+              </div>
+            {% empty %}
+              <div class="meta" style="color:var(--muted);">No valuation comps stored yet.</div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="panel" style="margin:14px 0;">
+          <h2>External Links</h2>
+          <div class="link-list">
+            {% for label, url in external_links %}
+              {% if url %}<a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ label }}</a>{% endif %}
+            {% empty %}
+              <div class="meta" style="color:var(--muted);">No external links stored yet.</div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="panel" style="margin:14px 0;">
+          <h2>Storage Recommendation</h2>
+          <div class="field-grid">
+            <div class="field"><span>Protection level</span><strong>{{ metadata_sections.storage_protection.protection_level|default:"-" }}</strong></div>
+            <div class="field"><span>Recommended supply</span><strong>{{ metadata_sections.storage_protection.recommended_supply|default:"-" }}</strong></div>
+            <div class="field"><span>Physical location</span><strong>{{ metadata_sections.storage_protection.physical_location_label|default:card.location|default:"Assign later" }}</strong></div>
+            <div class="field wide"><span>Reason</span><div>{{ metadata_sections.storage_protection.protection_reason|default:card.storage_recommendation|default:"-" }}</div></div>
+          </div>
+        </section>
+
+        {% if card.session %}
+          <form method="post" action="{% url 'card_vault:review-card-update' card.session.id card.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="form-grid">
+              <label>Player<input name="player_name" value="{{ card.player_name }}"></label>
+              <label>Team<input name="team" value="{{ card.team }}"></label>
+              <label>League<input name="league" value="{{ card.league }}"></label>
+              <label>Sport<input name="sport" value="{{ card.sport }}"></label>
+              <label>Year<input name="year" value="{{ card.year }}"></label>
+              <label>Brand<input name="brand" value="{{ card.brand }}"></label>
+              <label>Product<input name="product" value="{{ card.product }}"></label>
+              <label>Set<input name="set_name" value="{{ card.set_name }}"></label>
+              <label>Card #<input name="card_number" value="{{ card.card_number }}"></label>
+              <label>Insert<input name="insert_name" value="{{ card.insert_name }}"></label>
+              <label>Parallel<input name="parallel_name" value="{{ card.parallel_name }}"></label>
+              <label>Serial #<input name="serial_number" value="{{ card.serial_number }}"></label>
+              <label>Serial total<input name="serial_total" value="{{ card.serial_total }}"></label>
+              <label>Value<input name="estimated_raw_value" inputmode="decimal" value="{{ card.estimated_raw_value|default_if_none:'' }}"></label>
+              <label>Confidence<input name="confidence" type="number" min="0" max="1" step="0.01" value="{{ card.confidence }}"></label>
+              <label class="wide">Storage recommendation<textarea name="storage_recommendation">{{ card.storage_recommendation }}</textarea></label>
+            </div>
+            <div class="checks">
+              <label><input type="checkbox" name="rookie_status" {% if card.rookie_status %}checked{% endif %}> Rookie</label>
+              <label><input type="checkbox" name="autograph_detected" {% if card.autograph_detected %}checked{% endif %}> Auto</label>
+              <label><input type="checkbox" name="relic_detected" {% if card.relic_detected %}checked{% endif %}> Jersey</label>
+              <label><input type="checkbox" name="patch_detected" {% if card.patch_detected %}checked{% endif %}> Patch</label>
+            </div>
+            <div class="actions">
+              <button type="submit" name="action" value="save">Save</button>
+              <button type="submit" name="action" value="approve">Approve</button>
+              <button class="secondary" type="submit" name="action" value="needs_review">Needs Review</button>
+              <button class="danger" type="submit" name="action" value="ignored">Ignore</button>
+            </div>
+          </form>
+        {% endif %}
+
+        <h2 style="margin-top:18px;">Raw Extracted JSON</h2>
+        <div class="fact"><code>{{ card.extracted_json }}</code></div>
+
+        <section class="ai-panel">
+          <div class="panel">
+            <h2>Card AI Enrichment</h2>
+            <form method="post" action="{% url 'card_vault:card-ai-enrich' card.id %}">
+              {% csrf_token %}
+              <div class="ai-controls">
+                <label>Mode
+                  <select name="mode">
+                    {% for value, label in enrichment_modes %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label>Model override
+                  <input name="model" placeholder="Default model">
+                </label>
+              </div>
+              <div class="checks">
+                <label><input type="checkbox" name="force"> Overwrite existing metadata</label>
+              </div>
+              <div class="actions">
+                <button type="submit">Run Card AI</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel">
+            <h2>Recent AI Runs</h2>
+            <div class="run-list">
+              {% for enrichment in enrichments %}
+                <article class="run-card">
+                  <div class="run-head">
+                    <strong>{{ enrichment.mode_label }}</strong>
+                    <span class="badge">{{ enrichment.status }}</span>
+                  </div>
+                  <div class="meta">{{ enrichment.completed_at|default:enrichment.started_at }}{% if enrichment.model_name %} | {{ enrichment.model_name }}{% endif %}</div>
+                  {% if enrichment.errors %}
+                    <div class="notice error">{{ enrichment.errors }}</div>
+                  {% endif %}
+                  {% if enrichment.external_image_candidates %}
+                    <div class="candidate-list">
+                      <strong>External image/checklist candidates</strong>
+                      {% for candidate in enrichment.external_image_candidates %}
+                        <div class="candidate">
+                          <a href="{{ candidate.url }}" target="_blank" rel="noopener noreferrer">{{ candidate.title|default:candidate.url }}</a>
+                          <div class="meta">{{ candidate.source }} | {{ candidate.match_type }} | confidence {{ candidate.confidence }}</div>
+                          {% if candidate.image_url %}
+                            <div class="meta">Image: <a href="{{ candidate.image_url }}" target="_blank" rel="noopener noreferrer">{{ candidate.image_url }}</a></div>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <div class="meta">No external candidates stored for this run.</div>
+                  {% endif %}
+                  {% if enrichment.proposed_json %}
+                    <details>
+                      <summary>Proposed JSON</summary>
+                      <code>{{ enrichment.proposed_json }}</code>
+                    </details>
+                  {% endif %}
+                </article>
+              {% empty %}
+                <div class="meta">No per-card AI runs yet.</div>
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      </section>
+    </div>
+  </main>
+  <script>
+    document.querySelectorAll(".js-working-form").forEach((form) => {
+      form.addEventListener("submit", () => {
+        const button = form.querySelector("button[type='submit']");
+        if (!button) return;
+        button.disabled = true;
+        button.textContent = form.dataset.workingLabel || "Working...";
+      });
+    });
+  </script>
+</body>
+</html>

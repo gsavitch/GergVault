@@ -1,0 +1,32 @@
+{
+  "session_type": "batch_front_back",
+  "expected_card_count": 10,
+  "cards": [
+    {
+      "slot_index": 1,
+      "front_image_crop_id": null,
+      "back_image_crop_id": null,
+      "player_name": "",
+      "team": "",
+      "league": "",
+      "sport": "basketball",
+      "year": "",
+      "brand": "",
+      "product": "",
+      "set_name": "",
+      "card_number": "",
+      "rookie_status": false,
+      "insert_name": "",
+      "parallel_name": "",
+      "serial_number": "",
+      "serial_total": "",
+      "autograph_detected": false,
+      "relic_detected": false,
+      "patch_detected": false,
+      "estimated_raw_value": null,
+      "storage_recommendation": "",
+      "confidence": 0,
+      "review_status": "needs_review"
+    }
+  ]
+}
