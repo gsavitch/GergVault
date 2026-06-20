@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GergVault</title>
+  <style>
+    :root {
+      --ink: #162026;
+      --muted: #5e6b72;
+      --line: #d9ded8;
+      --bg: #f6f6f2;
+      --panel: #ffffff;
+      --vault: #13211e;
+      --green: #1f6f5b;
+      --gold: #c3a15e;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: var(--bg); color: var(--ink); }
+    a { color: inherit; }
+    header { background: radial-gradient(circle at top left, #29413b, var(--vault)); color: #fff; }
+    .hero { max-width: 1180px; margin: 0 auto; padding: 54px 22px 38px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 520px); gap: 34px; align-items: center; }
+    .eyebrow { color: #d7c493; font-size: 13px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+    h1 { margin: 10px 0 12px; font-size: clamp(42px, 8vw, 82px); line-height: .92; letter-spacing: 0; }
+    .lead { color: #dce7e2; font-size: 19px; line-height: 1.5; max-width: 680px; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 8px; text-decoration: none; font-weight: 800; border: 1px solid rgba(255,255,255,.22); }
+    .button.primary { background: var(--green); border-color: var(--green); color: #fff; }
+    .button.light { background: rgba(255,255,255,.08); color: #fff; }
+    .demo { border: 1px solid rgba(255,255,255,.18); border-radius: 10px; overflow: hidden; background: #0d1715; box-shadow: 0 22px 70px rgba(0,0,0,.28); }
+    .demo img { display: block; width: 100%; height: auto; }
+    main { max-width: 1180px; margin: 0 auto; padding: 26px 22px 48px; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
+    h2 { margin: 0 0 10px; font-size: 20px; }
+    p { margin: 0; color: var(--muted); line-height: 1.45; }
+    .support { margin-top: 18px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .6fr); gap: 14px; align-items: stretch; }
+    .support strong { color: var(--ink); }
+    .support .panel { border-color: #e2d4ad; background: #fffaf0; }
+    .small { font-size: 13px; color: var(--muted); margin-top: 12px; }
+    @media (max-width: 880px) {
+      .hero, .support { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      header { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Free hosted trading card intake</div>
+        <h1>GergVault</h1>
+        <p class="lead">Upload front and back group photos, turn them into reviewable card records, and keep AI output draft-first until a human approves it.</p>
+        <div class="actions">
+          <a class="button primary" href="/card-vault/">Open the hosted app</a>
+          <a class="button light" href="https://github.com/gsavitch/GergVault">Star on GitHub</a>
+        </div>
+      </div>
+      <figure class="demo">
+        <img src="https://raw.githubusercontent.com/gsavitch/GergVault/main/docs/assets/batch-front-back-demo.jpg" alt="Front and back 10-card batch intake example">
+      </figure>
+    </section>
+  </header>
+  <main>
+    <section class="grid" aria-label="Highlights">
+      <article class="panel">
+        <h2>Batch Intake</h2>
+        <p>Built for the practical collector workflow: one photo of card fronts, one photo of backs, then 10 draft rows by slot order.</p>
+      </article>
+      <article class="panel">
+        <h2>Human Review First</h2>
+        <p>AI extraction, crop matching, and value estimates stay draft/needs-review. Nothing is final until you approve it.</p>
+      </article>
+      <article class="panel">
+        <h2>Open Source</h2>
+        <p>The code is public, self-hostable, and ready for provider adapters, pricing research, and collection workflows.</p>
+      </article>
+    </section>
+    <section class="support">
+      <article class="panel">
+        <h2>Free to start, supported by donations</h2>
+        <p><strong>GergVault is free while the hosted version is early.</strong> If it saves you time cataloging cards, support helps cover hosting, AI experiments, pricing provider work, and better demo data.</p>
+        <p class="small">Donation links are coming. For now, starring the repo and sharing it with collectors helps a lot.</p>
+      </article>
+      <article class="panel">
+        <h2>Useful links</h2>
+        <p><a href="/card-vault/">Hosted app</a></p>
+        <p><a href="https://github.com/gsavitch/GergVault">GitHub repo</a></p>
+        <p><a href="https://github.com/gsavitch/GergVault/issues">Ideas and bugs</a></p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
