@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Gerg Card Vault.
+Thanks for helping improve GergVault.
 
 ## Local Checks
 

@@ -81,7 +81,7 @@ def sample_cards():
     return cards
 
 
-@override_settings(MEDIA_ROOT="/tmp/gerg-card-vault-ai-test-media")
+@override_settings(MEDIA_ROOT="/tmp/gergvault-ai-test-media")
 class CardVaultAiExtractionTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(

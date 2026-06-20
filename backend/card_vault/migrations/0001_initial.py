@@ -1,4 +1,4 @@
-# Generated for the Gerg Card Vault scaffold.
+# Generated for the GergVault scaffold.
 
 import uuid
 

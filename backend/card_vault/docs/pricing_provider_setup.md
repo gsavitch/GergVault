@@ -22,7 +22,7 @@ If no verified sold comps or price-guide data are available, the UI explains tha
 1. Create or use an eBay Developer account.
 2. Create an application in the eBay developer portal.
 3. Enable Browse API access for production.
-4. Add the app credentials to the Gerg Card Vault environment:
+4. Add the app credentials to the GergVault environment:
    - `EBAY_CLIENT_ID`
    - `EBAY_CLIENT_SECRET`
 5. Restart the web container so the environment is loaded.

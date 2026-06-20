@@ -1,6 +1,6 @@
-# Gerg Card Vault
+# GergVault
 
-Gerg Card Vault is a Django app for cataloging trading cards from front/back group photos. The first supported workflow is a 10-card batch intake: upload one front group image and one back group image, create draft card records, review metadata, optionally run AI extraction, and keep every card in review until a human approves it.
+GergVault is a Django app for cataloging trading cards from front/back group photos. The first supported workflow is a 10-card batch intake: upload one front group image and one back group image, create draft card records, review metadata, optionally run AI extraction, and keep every card in review until a human approves it.
 
 This repository is the standalone open-source extraction of the Card Vault module. It intentionally excludes private deployment config, production media, credentials, and local data.
 
