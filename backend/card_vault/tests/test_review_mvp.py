@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -158,3 +159,41 @@ class CardVaultReviewMvpTests(TestCase):
         self.assertIn(">10<", content)
         self.assertIn(">8<", content)
         self.assertIn("Review session", content)
+
+    def test_dashboard_has_web_upload_form(self):
+        response = self.client.get("/card-vault/")
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("Start a 10-card intake", content)
+        self.assertIn('name="front_group_image"', content)
+        self.assertIn('name="back_group_image"', content)
+        self.assertIn("Create draft intake", content)
+
+    def test_web_upload_creates_intake_and_redirects_to_review(self):
+        response = self.client.post(
+            "/card-vault/intake/new/",
+            data={
+                "title": "Web upload test",
+                "sport": "basketball",
+                "expected_card_count": "10",
+                "front_group_image": SimpleUploadedFile("fronts.jpg", b"front", content_type="image/jpeg"),
+                "back_group_image": SimpleUploadedFile("backs.jpg", b"back", content_type="image/jpeg"),
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        session = CardVaultIntakeSession.objects.exclude(pk=self.session.pk).get()
+        self.assertEqual(session.title, "Web upload test")
+        self.assertEqual(session.cards.count(), 10)
+        self.assertEqual(session.images.count(), 2)
+        self.assertIn(f"/card-vault/intake/{session.id}/review/", response["Location"])
+
+    def test_signup_page_loads(self):
+        self.client.logout()
+        response = self.client.get("/accounts/signup/")
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("Create your account", content)
+        self.assertIn("Create free account", content)

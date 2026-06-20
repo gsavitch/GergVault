@@ -6,6 +6,7 @@ app_name = "card_vault"
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
+    path("intake/new/", views.create_batch_intake, name="intake-new"),
     path("pricing/dashboard/", views.pricing_dashboard, name="pricing-dashboard"),
     path("cards/<int:card_id>/", views.card_detail, name="card-detail"),
     path("cards/<int:card_id>/valuations/", views.card_valuations, name="card-valuations"),

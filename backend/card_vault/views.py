@@ -2,7 +2,9 @@ from decimal import Decimal, InvalidOperation
 from datetime import timedelta
 from threading import Thread
 
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.db import close_old_connections, transaction
 from django.db.models import Count, OuterRef, Q, Subquery, Sum
@@ -43,6 +45,71 @@ from card_vault.services.pricing import provider_readiness, update_card_pricing
 AI_EXTRACTION_STALE_AFTER = timedelta(minutes=3)
 
 
+def signup(request):
+    if request.user.is_authenticated:
+        return redirect("card_vault:dashboard")
+    if request.method == "POST":
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Account created. Upload your first front/back card batch when you are ready.")
+            return redirect("card_vault:dashboard")
+    else:
+        form = UserCreationForm()
+    return render(request, "registration/signup.html", {"form": form})
+
+
+def _create_intake_session(*, user, title, sport, expected_count, front_group_image, back_group_image, notes=""):
+    session = CardVaultIntakeSession.objects.create(
+        session_type=CardVaultIntakeSession.SessionType.BATCH_FRONT_BACK,
+        title=title,
+        sport=sport,
+        expected_card_count=expected_count,
+        review_status=CardVaultIntakeSession.ReviewStatus.NEEDS_REVIEW,
+        extraction_status="not_started",
+        extraction_summary={
+            "feature": "Batch Card Intake",
+            "module": "Card Vault",
+            "draft_card_count": expected_count,
+            "crop_detection": "pending",
+            "ai_extraction": "pending",
+        },
+        notes=notes,
+        created_by=user if getattr(user, "is_authenticated", False) else None,
+    )
+    CardVaultImage.objects.create(
+        session=session,
+        role=CardVaultImage.ImageRole.FRONT_GROUP_ORIGINAL,
+        image=front_group_image,
+        original_filename=getattr(front_group_image, "name", ""),
+        metadata={"intake_role": "fronts", "expected_card_count": expected_count},
+    )
+    CardVaultImage.objects.create(
+        session=session,
+        role=CardVaultImage.ImageRole.BACK_GROUP_ORIGINAL,
+        image=back_group_image,
+        original_filename=getattr(back_group_image, "name", ""),
+        metadata={"intake_role": "backs", "expected_card_count": expected_count},
+    )
+    cards = []
+    for slot_index in range(1, expected_count + 1):
+        draft = draft_json_for_slot(slot_index=slot_index, sport=sport)
+        cards.append(
+            CardVaultCard(
+                session=session,
+                slot_index=slot_index,
+                sport=sport,
+                extracted_json=draft,
+                confidence=0,
+                review_status=CardVaultCard.ReviewStatus.NEEDS_REVIEW,
+                is_draft=True,
+            )
+        )
+    CardVaultCard.objects.bulk_create(cards)
+    return session
+
+
 def _latest_price_snapshots():
     latest_snapshot_id = (
         CardVaultPriceSnapshot.objects
@@ -63,54 +130,15 @@ class BatchCardIntakeView(APIView):
         data = serializer.validated_data
         sport = (data.get("sport") or "basketball").strip() or "basketball"
         expected_count = data["expected_card_count"]
-
-        session = CardVaultIntakeSession.objects.create(
-            session_type=CardVaultIntakeSession.SessionType.BATCH_FRONT_BACK,
+        session = _create_intake_session(
+            user=request.user,
             title=data.get("title", ""),
             sport=sport,
-            expected_card_count=expected_count,
-            review_status=CardVaultIntakeSession.ReviewStatus.NEEDS_REVIEW,
-            extraction_status="not_started",
-            extraction_summary={
-                "feature": "Batch Card Intake",
-                "module": "Card Vault",
-                "draft_card_count": expected_count,
-                "crop_detection": "pending",
-                "ai_extraction": "pending",
-            },
+            expected_count=expected_count,
+            front_group_image=data["front_group_image"],
+            back_group_image=data["back_group_image"],
             notes=data.get("notes", ""),
-            created_by=request.user if request.user.is_authenticated else None,
         )
-        CardVaultImage.objects.create(
-            session=session,
-            role=CardVaultImage.ImageRole.FRONT_GROUP_ORIGINAL,
-            image=data["front_group_image"],
-            original_filename=getattr(data["front_group_image"], "name", ""),
-            metadata={"intake_role": "fronts", "expected_card_count": expected_count},
-        )
-        CardVaultImage.objects.create(
-            session=session,
-            role=CardVaultImage.ImageRole.BACK_GROUP_ORIGINAL,
-            image=data["back_group_image"],
-            original_filename=getattr(data["back_group_image"], "name", ""),
-            metadata={"intake_role": "backs", "expected_card_count": expected_count},
-        )
-
-        cards = []
-        for slot_index in range(1, expected_count + 1):
-            draft = draft_json_for_slot(slot_index=slot_index, sport=sport)
-            cards.append(
-                CardVaultCard(
-                    session=session,
-                    slot_index=slot_index,
-                    sport=sport,
-                    extracted_json=draft,
-                    confidence=0,
-                    review_status=CardVaultCard.ReviewStatus.NEEDS_REVIEW,
-                    is_draft=True,
-                )
-            )
-        CardVaultCard.objects.bulk_create(cards)
 
         session = CardVaultIntakeSession.objects.prefetch_related("images", "cards").get(pk=session.pk)
         output = CardVaultIntakeSessionSerializer(session, context={"request": request})
@@ -219,6 +247,39 @@ def dashboard(request):
             "low_confidence_runs": low_confidence_runs,
         },
     )
+
+
+@login_required
+@transaction.atomic
+def create_batch_intake(request):
+    if request.method != "POST":
+        return redirect("card_vault:dashboard")
+    front = request.FILES.get("front_group_image")
+    back = request.FILES.get("back_group_image")
+    title = (request.POST.get("title") or "New card intake").strip()
+    sport = (request.POST.get("sport") or "basketball").strip() or "basketball"
+    notes = (request.POST.get("notes") or "").strip()
+    try:
+        expected_count = int(request.POST.get("expected_card_count") or 10)
+    except ValueError:
+        expected_count = 10
+    expected_count = max(1, min(10, expected_count))
+
+    if not front or not back:
+        messages.error(request, "Upload both a front group image and a back group image.")
+        return redirect("card_vault:dashboard")
+
+    session = _create_intake_session(
+        user=request.user,
+        title=title,
+        sport=sport,
+        expected_count=expected_count,
+        front_group_image=front,
+        back_group_image=back,
+        notes=notes,
+    )
+    messages.success(request, f"Created intake session with {expected_count} draft card rows.")
+    return redirect("card_vault:intake-review", session_id=session.id)
 
 
 @login_required
