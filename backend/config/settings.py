@@ -4,10 +4,15 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def csv_env(name, default=""):
+    return [value.strip() for value in os.environ.get(name, default).split(",") if value.strip()]
+
+
 SECRET_KEY = os.environ.get("SECRET_KEY", "gergvault-dev-secret")
 DEBUG = os.environ.get("DEBUG", "1").lower() in {"1", "true", "yes", "on"}
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
+ALLOWED_HOSTS = csv_env("ALLOWED_HOSTS", "localhost,127.0.0.1,gerg.savitch.fun")
+CSRF_TRUSTED_ORIGINS = csv_env("CSRF_TRUSTED_ORIGINS", "https://gerg.savitch.fun")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -104,6 +109,8 @@ LOGOUT_REDIRECT_URL = "/"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = os.environ.get("USE_X_FORWARDED_HOST", "1").lower() in {"1", "true", "yes", "on"}
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "0").lower() in {"1", "true", "yes", "on"}
+SESSION_COOKIE_NAME = os.environ.get("SESSION_COOKIE_NAME", "gergvault_sessionid")
+CSRF_COOKIE_NAME = os.environ.get("CSRF_COOKIE_NAME", "gergvault_csrftoken")
 SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "0").lower() in {"1", "true", "yes", "on"}
 CSRF_COOKIE_SECURE = os.environ.get("CSRF_COOKIE_SECURE", "0").lower() in {"1", "true", "yes", "on"}
 SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0") or "0")
